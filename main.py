@@ -1,4 +1,5 @@
 import numpy as np
+import pickle
 import time
 import torch
 
@@ -24,7 +25,8 @@ agent = SimpleAgent(n_jobs,
                     env.get_action_space_dimension(), 
                     device)
 
-n_episodes = 500 
+n_episodes = 1000 
+sum_steps = 0
 
 for i in range(n_episodes):
     env.reset()
@@ -33,10 +35,10 @@ for i in range(n_episodes):
     n_steps = 0
 
     while not done:
-        # action = int(np.floor(np.random.uniform(-1, n_jobs)))  # Random agent
+        action = int(np.floor(np.random.uniform(-1, n_jobs)))  # Random agent
     
         # Take an action w.r.t the agent policy
-        action = agent.select_action(state)
+        # action = agent.select_action(state)
 
         # Get the resulting reward and next state from environment
         next_state, reward, done, _ = env.step(action)
@@ -45,22 +47,26 @@ for i in range(n_episodes):
             next_state = None
 
         # Store the (s, a, r, sp) quadruplet for training
-        agent.store(state, action, reward, next_state)
+        # agent.store(state, action, reward, next_state)
 
         # Set next_state as the new state
         state = next_state
 
         # Make one agent training step
-        agent.train_one_step()
+        # agent.train_one_step()
 
         #if n_steps % 200 == 0:
         #    env.render(verbosity=0)
         
         n_steps += 1
 
+    sum_steps += n_steps
     print(f"Job done in {n_steps * env.time_step} units of time")
+    print(f"Average time : {sum_steps / (i + 1)} steps")
 
 #env.render()
 print(f"Job done in {n_steps * env.time_step} units of time")
 print(f"Minimum boudary for time : {np.max(np.sum(times, axis=1))}")
 print(f"Maximum boudary for time : {np.sum(times)}")
+
+pickle.dump(agent, open("./simple_agent_save.pickle", "wb"))
