@@ -36,7 +36,7 @@ class SimpleAgent:
         sample = random.random()
         eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
             math.exp(-1. * self.steps_done / self.eps_decay)
-        if not self.is_training or sample > eps_threshold:
+        if sample > eps_threshold: # or not self.is_training: temporary commented to test eval mode
             with torch.no_grad():
                 state = torch.tensor(state).view(-1).float()  # Reshape tensor to make it a column
                 return self.policy_net(state).argmax().item()  # item is here to convert tensor to int
