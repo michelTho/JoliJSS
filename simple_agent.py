@@ -57,11 +57,11 @@ class SimpleAgent:
                                         dtype=torch.bool)
         
         non_final_next_states = torch.cat([
-            torch.tensor(s).view(-1, 1) for s in batch.next_state if s is not None
+            torch.tensor(s, device=self.device).view(-1, 1) for s in batch.next_state if s is not None
         ], dim=1).transpose(0, 1).float()
-        state_batch = torch.tensor(batch.state).view(self.batch_size, -1).float()
-        action_batch = torch.tensor(batch.action).view(-1, 1)
-        reward_batch = torch.tensor(batch.reward)
+        state_batch = torch.tensor(batch.state, device=self.device).view(self.batch_size, -1).float()
+        action_batch = torch.tensor(batch.action, device=self.device).view(-1, 1)
+        reward_batch = torch.tensor(batch.reward, device=self.device)
         
         state_action_values = self.policy_net(state_batch).gather(1, action_batch)
 

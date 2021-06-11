@@ -25,7 +25,7 @@ agent = SimpleAgent(n_jobs,
                     device)
 agent.train()
 
-n_episodes = 10
+n_episodes = 2
 
 for i in range(n_episodes):
     env.reset()
