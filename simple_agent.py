@@ -47,7 +47,7 @@ class SimpleAgent:
         self.memory.push(state, action, reward, next_state)
 
     def train_one_step(self):
-        if len(self.memory) < self.batch_size:
+        if len(self.memory) < self.batch_size or not self.is_training:
             return
         transitions = self.memory.sample(self.batch_size)
         batch = Transition(*zip(*transitions))

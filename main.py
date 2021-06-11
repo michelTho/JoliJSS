@@ -73,12 +73,14 @@ for i in range(n_episodes):
         
         n_steps += 1
 
+env.render()
+print(f"Job done in {n_steps * env.time_step} units of time")
+print(f"Minimum boudary for time : {np.max(np.sum(times, axis=1))}")
+print(f"Maximum boudary for time : {np.sum(times)}")
+
 print(timer1)
 print(timer2)
 print(timer3)
 print(timer4)
 
-env.render()
-print(f"Job done in {n_steps * env.time_step} units of time")
-print(f"Minimum boudary for time : {np.max(np.sum(times, axis=1))}")
-print(f"Maximum boudary for time : {np.sum(times)}")
+
