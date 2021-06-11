@@ -26,12 +26,6 @@ agent = SimpleAgent(n_jobs,
 
 n_episodes = 2
 
-timer1 = 0
-timer2 = 0
-timer3 = 0
-timer4 = 0
-cur_time = time.time()
-
 for i in range(n_episodes):
     env.reset()
     state = env.get_state()
@@ -68,10 +62,3 @@ env.render()
 print(f"Job done in {n_steps * env.time_step} units of time")
 print(f"Minimum boudary for time : {np.max(np.sum(times, axis=1))}")
 print(f"Maximum boudary for time : {np.sum(times)}")
-
-print(timer1)
-print(timer2)
-print(timer3)
-print(timer4)
-
-

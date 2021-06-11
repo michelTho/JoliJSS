@@ -45,51 +45,45 @@ class SimpleAgent:
             return random.randrange(self.n_actions)
 
     def store(self, state, action, reward, next_state):
-        self.memory.push(state, action, reward, next_state)
+        self.memory.push(torch.tensor(state, device=self.device).view(-1, 1).float(), 
+                         torch.tensor(action, device=self.device).view(-1, 1), 
+                         torch.tensor([reward], device=self.device), 
+                         torch.tensor(next_state, device=self.device).view(-1, 1).float()
+                             if next_state is not None else None) 
 
     def train_one_step(self):
         if len(self.memory) < self.batch_size or not self.is_training:
             return
-        timer = time.time()
+        
         transitions = self.memory.sample(self.batch_size)
         batch = Transition(*zip(*transitions))
-        print(time.time() - timer)
-        timer = time.time()
+
         non_final_mask = torch.tensor(tuple(map(lambda s: s is not None, batch.next_state)), 
                                         device=self.device,
                                         dtype=torch.bool)
         
         non_final_next_states = torch.cat([
-            torch.tensor(s, device=self.device).view(-1, 1) for s in batch.next_state if s is not None
-        ], dim=1).transpose(0, 1).float()
-        state_batch = torch.tensor(batch.state, device=self.device).view(self.batch_size, -1).float()
-        action_batch = torch.tensor(batch.action, device=self.device).view(-1, 1)
-        reward_batch = torch.tensor(batch.reward, device=self.device)
+            s for s in batch.next_state if s is not None
+        ], dim=1).transpose(0, 1)
+        state_batch = torch.cat(batch.state, dim=1).transpose(0, 1)
+        action_batch = torch.cat(batch.action)
+        reward_batch = torch.cat(batch.reward)
         
         state_action_values = self.policy_net(state_batch).gather(1, action_batch)
-
+        
         next_state_values = torch.zeros(self.batch_size, device=self.device)
         next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1)[0].detach()
 
         expected_state_action_values = (next_state_values * self.gamma) + reward_batch
 
-        print(time.time() - timer)
-        timer = time.time()
- 
         criterion = nn.SmoothL1Loss()
         loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
-        print(time.time() - timer)
-        timer = time.time()
  
         self.optimizer.zero_grad()
         loss.backward()
-        print(time.time() - timer)
-        timer = time.time()
         for param in self.policy_net.parameters():
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
-        print(time.time() - timer)
-        timer = time.time()
  
     def train(self):
         self.is_training = True
