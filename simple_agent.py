@@ -11,7 +11,7 @@ from memory import ReplayMemory, Transition
 class SimpleAgent:
 
     def __init__(self, n_jobs, n_machines, input_size, n_actions, device):
-        self.batch_size = 128
+        self.batch_size = 512
         self.gamma = 0.999
         self.eps_start = 0.9
         self.eps_end = 0.05
