@@ -23,7 +23,6 @@ agent = SimpleAgent(n_jobs,
                     env.get_state_space_dimension(), 
                     env.get_action_space_dimension(), 
                     device)
-agent.eval()
 
 n_episodes = 2
 
@@ -44,29 +43,21 @@ for i in range(n_episodes):
     
         # Take an action w.r.t the agent policy
         action = agent.select_action(state)
-        timer1 += time.time() - cur_time
-        cur_time = time.time()
 
         # Get the resulting reward and next state from environment
         next_state, reward, done, _ = env.step(action)
-        timer2 += time.time() - cur_time
-        cur_time = time.time()
         
         if done:
             next_state = None
 
         # Store the (s, a, r, sp) quadruplet for training
         agent.store(state, action, reward, next_state)
-        timer3 += time.time() - cur_time
-        cur_time = time.time()
         
         # Set next_state as the new state
         state = next_state
     
         # Make one agent training step
         agent.train_one_step()
-        timer4 += time.time() - cur_time
-        cur_time = time.time()
         
         if n_steps % 200 == 0:
             env.render(verbosity=0)

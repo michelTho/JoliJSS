@@ -1,5 +1,6 @@
 import math
 import random
+import time
 import torch
 import torch.optim as optim
 import torch.nn as nn
@@ -36,7 +37,7 @@ class SimpleAgent:
         sample = random.random()
         eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
             math.exp(-1. * self.steps_done / self.eps_decay)
-        if sample > eps_threshold: # or not self.is_training: temporary commented to test eval mode
+        if sample > eps_threshold or not self.is_training:
             with torch.no_grad():
                 state = torch.tensor(state).view(-1).float()  # Reshape tensor to make it a column
                 return self.policy_net(state).argmax().item()  # item is here to convert tensor to int
@@ -49,9 +50,11 @@ class SimpleAgent:
     def train_one_step(self):
         if len(self.memory) < self.batch_size or not self.is_training:
             return
+        timer = time.time()
         transitions = self.memory.sample(self.batch_size)
         batch = Transition(*zip(*transitions))
-
+        print(time.time() - timer)
+        timer = time.time()
         non_final_mask = torch.tensor(tuple(map(lambda s: s is not None, batch.next_state)), 
                                         device=self.device,
                                         dtype=torch.bool)
@@ -70,15 +73,24 @@ class SimpleAgent:
 
         expected_state_action_values = (next_state_values * self.gamma) + reward_batch
 
+        print(time.time() - timer)
+        timer = time.time()
+ 
         criterion = nn.SmoothL1Loss()
         loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
-
+        print(time.time() - timer)
+        timer = time.time()
+ 
         self.optimizer.zero_grad()
         loss.backward()
+        print(time.time() - timer)
+        timer = time.time()
         for param in self.policy_net.parameters():
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
-
+        print(time.time() - timer)
+        timer = time.time()
+ 
     def train(self):
         self.is_training = True
 
