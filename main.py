@@ -25,6 +25,11 @@ agent = SimpleAgent(n_jobs,
                     device)
 
 n_episodes = 2
+timer1 = 0
+timer2 = 0
+timer3 = 0
+timer4 = 0
+timer = time.time()
 
 for i in range(n_episodes):
     env.reset()
@@ -40,19 +45,24 @@ for i in range(n_episodes):
 
         # Get the resulting reward and next state from environment
         next_state, reward, done, _ = env.step(action)
-        
+       
         if done:
             next_state = None
 
         # Store the (s, a, r, sp) quadruplet for training
         agent.store(state, action, reward, next_state)
-        
+
         # Set next_state as the new state
         state = next_state
-    
+        timer1 += time.time() - timer
+        timer = time.time()
+
         # Make one agent training step
         agent.train_one_step()
-        
+        timer2 += time.time() - timer
+        timer = time.time()
+
+
         if n_steps % 200 == 0:
             env.render(verbosity=0)
         
@@ -62,3 +72,6 @@ env.render()
 print(f"Job done in {n_steps * env.time_step} units of time")
 print(f"Minimum boudary for time : {np.max(np.sum(times, axis=1))}")
 print(f"Maximum boudary for time : {np.sum(times)}")
+
+print(timer1)
+print(timer2)
