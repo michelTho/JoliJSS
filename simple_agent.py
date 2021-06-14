@@ -10,37 +10,41 @@ from memory import ReplayMemory, Transition
 
 class SimpleAgent:
 
-    def __init__(self, n_jobs, n_machines, input_size, n_actions, device):
+    def __init__(self, n_jobs, n_machines, input_size, n_actions, hidden_size, device):
         self.batch_size = 512
         self.gamma = 0.999
         self.eps_start = 0.9
-        self.eps_end = 0.05
-        self.eps_decay= 200
-        self.target_update = 10
+        self.eps_end = 0.
+        self.eps_decay = 5000
+        self.target_update = 1000
 
         self.n_actions = n_actions
         self.device = device
 
-        self.policy_net = DQN(input_size, n_actions, device)
-        self.target_net = DQN(input_size, n_actions, device)
+        self.policy_net = DQN(input_size, n_actions, hidden_size, device)
+        self.target_net = DQN(input_size, n_actions, hidden_size, device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
         
-        self.memory = ReplayMemory(1000000)
+        self.memory = ReplayMemory(10000)
 
         self.steps_done = 0
 
         self.is_training = True
-        self. optimizer = optim.RMSprop(self.policy_net.parameters())
-    
+        self.optimizer = optim.RMSprop(self.policy_net.parameters())
+   
+    @classmethod
+    def convert_state_to_net_input(cls, state):
+        return torch.tensor(state).view(-1).float() # Reshape tensor to make it a column
+
     def select_action(self, state):
         sample = random.random()
         eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
             math.exp(-1. * self.steps_done / self.eps_decay)
         if sample > eps_threshold or not self.is_training:
             with torch.no_grad():
-                state = torch.tensor(state).view(-1).float()  # Reshape tensor to make it a column
-                return self.policy_net(state).argmax().item()  # item is here to convert tensor to int
+                net_input = self.convert_state_to_net_input(state)
+                return self.policy_net(net_input).argmax().item()  # item is here to convert tensor to int
         else:
             return random.randrange(self.n_actions)
 
@@ -84,7 +88,11 @@ class SimpleAgent:
         for param in self.policy_net.parameters():
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
- 
+
+        self.steps_done += 1
+        if self.steps_done % self.target_update == 0:
+            self.target_net.load_state_dict(self.policy_net.state_dict())
+
     def train(self):
         self.is_training = True
 

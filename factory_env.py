@@ -14,9 +14,7 @@ class FactoryEnv:
 
     def step(self, action):
         if action == -1:
-            self.take_time_step()
-            # We use the same API as gym environments : https://gym.openai.com/docs/
-            return self.get_state(), -1, self.check_done(), None
+            pass  # This action correspond to noop
         elif action in range(0, self.n_jobs):
             if np.sum(self.current_jobs[action]) == 0:
                 indexes = np.where(self.completion[action] == 0)[0]
@@ -24,12 +22,17 @@ class FactoryEnv:
                     index = indexes[0]
                     if self.machine_usage[self.affectations[action][index]] == 0:
                         self.current_jobs[action][index] = 1
-            self.take_time_step()
-            return self.get_state(), -1, self.check_done(), None
         else: 
             raise Exception(f"The action you provided ({action}) is not valid. "
             f"Please provide an integer between -1 and {self.n_jobs}.")
-    
+        
+        self.take_time_step()
+        reward = -1
+        if self.check_done():
+            reward = 10
+        # We use the same API as gym environments : https://gym.openai.com/docs/
+        return self.get_state(), reward, self.check_done(), None
+         
     def render(self, verbosity=0):
         print("PROBLEM DESCRIPTION")
         print("Affectations of jobs on machines")
@@ -65,7 +68,7 @@ class FactoryEnv:
         #  - a second one representing the times needed for each job to complete
         #  - and a third one saying how long the job has been running.
         # The third matrix is the only one which is going to change. Once the third matrix
-        # Is similar to the second one, all jobs are completed.
+        # is similar to the second one, all jobs are completed.
         return np.concatenate((self.affectations, self.times, self.completion), axis=0)
 
     def check_done(self):
