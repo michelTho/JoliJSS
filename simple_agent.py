@@ -38,6 +38,12 @@ class SimpleAgent:
         return torch.tensor(state).view(-1).float() # Reshape tensor to make it a column
 
     def select_action(self, state):
+        action_id = self.select_action_id(state)
+        if action_id == self.n_actions - 1:
+            return - 1
+        return action_id
+
+    def select_action_id(self, state):
         sample = random.random()
         eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
             math.exp(-1. * self.steps_done / self.eps_decay)
@@ -49,6 +55,8 @@ class SimpleAgent:
             return random.randrange(self.n_actions)
 
     def store(self, state, action, reward, next_state):
+        if action == -1:
+            action = self.n_actions - 1
         self.memory.push(torch.tensor(state, device=self.device).view(-1, 1).float(), 
                          torch.tensor(action, device=self.device).view(-1, 1), 
                          torch.tensor([reward], device=self.device), 

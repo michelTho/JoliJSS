@@ -26,7 +26,7 @@ time.sleep(2)
 hidden_size = 8
 
 env = FactoryEnv(n_jobs, n_machines, affectations, times) 
-agent = SimpleAgent(n_jobs, 
+agent = SimpleAgent(n_jobs + 1, 
                     n_machines, 
                     env.get_state_space_dimension(), 
                     env.get_action_space_dimension(),

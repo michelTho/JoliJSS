@@ -21,8 +21,12 @@ class FactoryEnv:
         self.machine_usage = np.zeros(n_machines)
 
     def step(self, action):
-        if action == -1:
-            pass  # This action correspond to noop
+        
+        unadapted_action_taken = True  # A flag to tell if the action has an effect
+
+        if action == -1: # This action correspond to noop
+            if self.check_machine_occupation():
+                unadapted_action_taken = False
         elif action in range(0, self.n_jobs):
             if np.sum(self.current_jobs[action]) == 0:
                 indexes = np.where(self.completion[action] == 0)[0]
@@ -30,15 +34,20 @@ class FactoryEnv:
                     index = indexes[0]
                     if self.machine_usage[self.affectations[action][index]] == 0:
                         self.current_jobs[action][index] = 1
+                        self.machine_usage[self.affectations[action][index]] = 1
+                        unadapted_action_taken = False
         else: 
             raise Exception(f"The action you provided ({action}) is not valid. "
             f"Please provide an integer between -1 and {self.n_jobs}.")
+
+        # We only move forward if there is no uselessly free machine
+        if self.check_machine_occupation():  
+            self.take_time_step()
         
-        self.take_time_step()
-        reward = -1
-        if self.check_done():
-            reward = 10
         # We use the same API as gym environments : https://gym.openai.com/docs/
+        reward = 10 if self.check_done() else -1
+        if unadapted_action_taken:
+            reward -= 5
         return self.get_state(), reward, self.check_done(), None
          
     def render(self, verbosity=0):
