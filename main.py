@@ -10,8 +10,8 @@ from benchmark import AFFECTATIONS, TIMES
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-n_jobs = 3 
-n_machines = 3
+n_jobs = 2 
+n_machines = 2
 
 affectations = np.floor(np.random.uniform(0, n_machines, (n_jobs, n_machines))).astype(np.int32) 
 times = np.floor(np.random.uniform(1, 10, (n_jobs, n_machines))).astype(np.int32) 
@@ -23,9 +23,10 @@ time.sleep(2)
 # affectations = np.array(AFFECTATIONS) - 1
 # times = np.array(TIMES)
 
-hidden_size = 128
+hidden_size = 256
 
-env = FactoryEnv(n_jobs, n_machines, affectations, times) 
+env = FactoryEnv(n_jobs, n_machines, affectations, times, 
+                    encoding='classic', time_handling='event') 
 agent = SimpleAgent(n_jobs + 1, 
                     n_machines, 
                     env.get_state_space_dimension(), 

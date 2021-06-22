@@ -1,9 +1,10 @@
 import numpy as np
+import time
 
 class FactoryEnv:
 
-    def __init__(self, n_jobs, n_machines, affectations, times):
-        self.encoding = 'one-hot'
+    def __init__(self, n_jobs, n_machines, affectations, times, encoding, time_handling):
+        self.encoding = encoding
         # There are several possible encodings for the state space. 
         # The classical encoding represent the state as the concatenation
         # of 3 matrixes (one for affectations, another for times, and a third one
@@ -12,6 +13,12 @@ class FactoryEnv:
         # of the following form : 
         # one hot for i, one hot for j, one hot for affectation, time, and completion
         assert self.encoding in {'classic', 'one-hot'}
+
+        self.time_handling = time_handling
+        # There are several ways to handle time : either you make time steps,
+        # or you act event based (you only let the agent act when there is 
+        # something to do
+        assert self.time_handling in {'steps', 'event'}
 
         self.n_steps = 0
 
@@ -54,7 +61,7 @@ class FactoryEnv:
 
         # We only move forward if there is no uselessly free machine
         if self.check_machine_occupation():  
-            self.take_time_step()
+            self.move_forward()
         
         # We use the same API as gym environments : https://gym.openai.com/docs/
         reward = 10 if self.check_done() else -1
@@ -77,6 +84,15 @@ class FactoryEnv:
             print(self.current_jobs)
             print("Machine usage")
             print(self.machine_usage)
+    
+    def move_forward(self):
+        if self.time_handling == 'steps':
+            self.take_time_step()
+        elif self.time_handling == 'event':
+            while self.check_machine_occupation(): 
+                if self.check_done():
+                    break
+                self.take_time_step()
 
     def take_time_step(self):
         self.n_steps += 1
@@ -160,7 +176,6 @@ class FactoryEnv:
                             job_index, 
                             np.where(self.completion[job_index, :]  == 0)[0][0]
                             ] for job_index in available_jobs]
-        
         if len(set(usable_machines).intersection(
             list(np.where(self.machine_usage == 0)[0]))) != 0:
             return False
