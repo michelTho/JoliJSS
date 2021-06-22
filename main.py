@@ -92,8 +92,8 @@ for i in range(n_episodes):
 
     # sum_steps += n_steps
     # min_achieved_boundary = min(min_achieved_boundary, n_steps)
-    
-    if (i+1) % 100000 == 0:
+   
+    if i % 3 == 0:
         print("================================")
         # print(f"Job done in {n_steps * env.time_step} units of time")
         # print(f"Average time : {sum_steps / (i + 1)} steps")
