@@ -10,8 +10,8 @@ from benchmark import AFFECTATIONS, TIMES
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-n_jobs = 2 
-n_machines = 2
+n_jobs = 3 
+n_machines = 3
 
 affectations = np.floor(np.random.uniform(0, n_machines, (n_jobs, n_machines))).astype(np.int32) 
 times = np.floor(np.random.uniform(1, 10, (n_jobs, n_machines))).astype(np.int32) 
@@ -23,7 +23,7 @@ time.sleep(2)
 # affectations = np.array(AFFECTATIONS) - 1
 # times = np.array(TIMES)
 
-hidden_size = 8
+hidden_size = 128
 
 env = FactoryEnv(n_jobs, n_machines, affectations, times) 
 agent = SimpleAgent(n_jobs + 1, 
@@ -33,18 +33,21 @@ agent = SimpleAgent(n_jobs + 1,
                     hidden_size,
                     device)
 
-n_episodes = 5000 
+n_episodes = 50000 
 sum_steps = 0
 
 min_achieved_boundary = 2 * np.sum(times)  # Take a high value, just in case
+
+losses = []
+rewards = []
 
 for i in range(n_episodes):
     env.reset()
     state = env.get_state()
     done = False
-    n_steps = 0
     actions_taken = []
     values = []
+    n_steps = 0
 
     while not done:
         # action = int(np.floor(np.random.uniform(-1, n_jobs)))  # Random agent
@@ -56,8 +59,9 @@ for i in range(n_episodes):
         value = agent.policy_net(agent.convert_state_to_net_input(state))[action].item()
 
         # Get the resulting reward and next state from environment
-        next_state, reward, done, _ = env.step(action)
-       
+        next_state, reward, done, info = env.step(action)
+        rewards.append(reward)
+
         if done:
             next_state = None
 
@@ -68,26 +72,27 @@ for i in range(n_episodes):
         state = next_state
 
         # Make one agent training step
-        agent.train_one_step()
+        losses.append(agent.train_one_step())
 
         #if n_steps % 200 == 0:
         #    env.render(verbosity=0)
         
-        n_steps += 1
+        n_steps = info["n_steps"]
         actions_taken.append(action)
         values.append(value)
 
     sum_steps += n_steps
     min_achieved_boundary = min(min_achieved_boundary, n_steps)
-    print(f"Job done in {n_steps * env.time_step} units of time")
-    print(f"Average time : {sum_steps / (i + 1)} steps")
-    print(actions_taken)
-    print(values)
-
-#env.render()
-print(f"Job done in {n_steps * env.time_step} units of time")
-print(f"Minimum boudary for time : {np.max(np.sum(times, axis=1))}")
-print(f"Minimum achieved boudary for time : {min_achieved_boundary}")
-print(f"Maximum boudary for time : {np.sum(times)}")
+    
+    if i % 100 == 0:
+        print("================================")
+        print(f"Job done in {n_steps * env.time_step} units of time")
+        print(f"Average time : {sum_steps / (i + 1)} steps")
+        print(f"Action taken : \n{actions_taken}")
+        print(f"Values : \n {['%.2f' % v for v in values]}")
+        print(f"Epsilon : {agent.get_epsilon()}")
+        print("================================")
+        print(f"Loss : {np.mean(losses[max(len(losses) - 1000, 0):len(losses)])}")
+        print(f"Reward : {np.mean(rewards[max(len(rewards) - 1000, 0):len(rewards)])}")
 
 pickle.dump(agent, open("./simple_agent_save.pickle", "wb"))

@@ -3,6 +3,18 @@ import numpy as np
 class FactoryEnv:
 
     def __init__(self, n_jobs, n_machines, affectations, times):
+        self.encoding = 'one-hot'
+        # There are several possible encodings for the state space. 
+        # The classical encoding represent the state as the concatenation
+        # of 3 matrixes (one for affectations, another for times, and a third one
+        # for current completion times
+        # The one-hot encoding represent each job with a one hot vector 
+        # of the following form : 
+        # one hot for i, one hot for j, one hot for affectation, time, and completion
+        assert self.encoding in {'classic', 'one-hot'}
+
+        self.n_steps = 0
+
         self.time_step = 1
         self.n_jobs = n_jobs
         self.n_machines = n_machines
@@ -47,8 +59,8 @@ class FactoryEnv:
         # We use the same API as gym environments : https://gym.openai.com/docs/
         reward = 10 if self.check_done() else -1
         if unadapted_action_taken:
-            reward -= 5
-        return self.get_state(), reward, self.check_done(), None
+            reward -= 2
+        return self.get_state(), reward, self.check_done(), {"n_steps" : self.n_steps}
          
     def render(self, verbosity=0):
         print("PROBLEM DESCRIPTION")
@@ -67,6 +79,8 @@ class FactoryEnv:
             print(self.machine_usage)
 
     def take_time_step(self):
+        self.n_steps += 1
+
         # We first complete completion, by adding a time step to running jobs
         # And crop them if they get bigger than completion time
         self.completion = np.minimum(
@@ -86,13 +100,28 @@ class FactoryEnv:
                     self.machine_usage[self.affectations[i, j]] = 1
 
     def get_state(self):
-        # The state of the factory is represented by the concatenation of 3 matrix :
-        #  - a first one representing the affectations of the jobs on the machines
-        #  - a second one representing the times needed for each job to complete
-        #  - and a third one saying how long the job has been running.
-        # The third matrix is the only one which is going to change. Once the third 
-        # matrix is similar to the second one, all jobs are completed.
-        return np.concatenate((self.affectations, self.times, self.completion), axis=0)
+        if self.encoding == 'classic':
+            # The state of the factory is represented by the concatenation of 3 matrix :
+            #  - a first one representing the affectations of the jobs on the machines
+            #  - a second one representing the times needed for each job to complete
+            #  - and a third one saying how long the job has been running.
+            # The third matrix is the only one which is going to change. Once the third 
+            # matrix is similar to the second one, all jobs are completed.
+            return np.concatenate((self.affectations, self.times, self.completion), axis=0)
+        elif self.encoding == 'one-hot':
+            state = []
+            for i in range(self.n_jobs):
+                for j in range(self.n_machines):
+                    cur_job = [0 for k in range(self.n_jobs)]
+                    cur_machine = [0 for k in range(self.n_machines)]
+                    cur_affectation = [0 for k in range(self.n_machines)] 
+                    cur_job[i] = 1
+                    cur_machine[j] = 1
+                    cur_affectation[self.affectations[i, j]] = 1
+                    cur_time = self.times[i, j]
+                    cur_completion = self.completion[i, j]
+                    state.append(cur_job + cur_machine + cur_affectation + [cur_time] + [cur_completion])
+            return np.array(state)
 
     def check_done(self):
         if (self.completion == self.times).all():
@@ -101,6 +130,7 @@ class FactoryEnv:
             return False
 
     def reset(self):
+        self.n_steps = 0
         self.completion = np.zeros((self.n_jobs, self.n_machines))
         self.current_jobs = np.zeros((self.n_jobs, self.n_machines))
         self.machine_usage = np.zeros(self.n_machines)
@@ -109,8 +139,11 @@ class FactoryEnv:
         return self.n_jobs + 1
 
     def get_state_space_dimension(self):
-        return self.n_jobs * self.n_machines * 3
-
+        if self.encoding == 'classic':
+            return self.n_jobs * self.n_machines * 3
+        elif self.encoding == 'one-hot':
+            return (self.n_jobs + self.n_machines * 2 + 2) * self.n_machines * self.n_jobs
+    
     def check_machine_occupation(self):
         # The point of this function is to check if there is a machine
         # which could be used, but which isn't because of the ordrers given

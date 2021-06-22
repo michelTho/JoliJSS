@@ -37,6 +37,11 @@ class SimpleAgent:
     def convert_state_to_net_input(cls, state):
         return torch.tensor(state).view(-1).float() # Reshape tensor to make it a column
 
+    def get_epsilon(self):
+        eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
+            math.exp(-1. * self.steps_done / self.eps_decay)
+        return eps_threshold
+
     def select_action(self, state):
         action_id = self.select_action_id(state)
         if action_id == self.n_actions - 1:
@@ -45,9 +50,7 @@ class SimpleAgent:
 
     def select_action_id(self, state):
         sample = random.random()
-        eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
-            math.exp(-1. * self.steps_done / self.eps_decay)
-        if sample > eps_threshold or not self.is_training:
+        if sample > self.get_epsilon() or not self.is_training:
             with torch.no_grad():
                 net_input = self.convert_state_to_net_input(state)
                 return self.policy_net(net_input).argmax().item()  # item is here to convert tensor to int
@@ -65,7 +68,7 @@ class SimpleAgent:
 
     def train_one_step(self):
         if len(self.memory) < self.batch_size or not self.is_training:
-            return
+            return 0
         
         transitions = self.memory.sample(self.batch_size)
         batch = Transition(*zip(*transitions))
@@ -90,7 +93,8 @@ class SimpleAgent:
 
         criterion = nn.SmoothL1Loss()
         loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
- 
+        loss_value = loss.item()
+
         self.optimizer.zero_grad()
         loss.backward()
         for param in self.policy_net.parameters():
@@ -100,6 +104,8 @@ class SimpleAgent:
         self.steps_done += 1
         if self.steps_done % self.target_update == 0:
             self.target_net.load_state_dict(self.policy_net.state_dict())
+        
+        return loss_value
 
     def train(self):
         self.is_training = True
