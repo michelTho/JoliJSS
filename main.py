@@ -10,7 +10,7 @@ from benchmark import AFFECTATIONS, TIMES
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-n_jobs = 2 
+n_jobs = 2
 n_machines = 2
 
 affectations = np.floor(np.random.uniform(0, n_machines, (n_jobs, n_machines))).astype(np.int32) 
@@ -26,7 +26,7 @@ time.sleep(2)
 hidden_size = 256
 
 env = FactoryEnv(n_jobs, n_machines, affectations, times, 
-                    encoding='classic', time_handling='event') 
+                    encoding='classic', time_handling='steps') 
 agent = SimpleAgent(n_jobs + 1, 
                     n_machines, 
                     env.get_state_space_dimension(), 
@@ -85,7 +85,7 @@ for i in range(n_episodes):
     sum_steps += n_steps
     min_achieved_boundary = min(min_achieved_boundary, n_steps)
     
-    if i % 100 == 0:
+    if i % 10 == 0:
         print("================================")
         print(f"Job done in {n_steps * env.time_step} units of time")
         print(f"Average time : {sum_steps / (i + 1)} steps")
