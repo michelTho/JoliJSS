@@ -1,7 +1,9 @@
-import numpy as np
 import time
 
-class FactoryEnv:
+import gym
+import numpy as np
+
+class FactoryEnv(gym.Env):
 
     def __init__(self, n_jobs, n_machines, affectations, times, encoding, time_handling):
         self.encoding = encoding
@@ -39,9 +41,20 @@ class FactoryEnv:
         # There is a 0 for free machines, and 1 for used machines
         self.machine_usage = np.zeros(n_machines)
 
+        # Gym compatibility
+        self.action_space = gym.spaces.Discrete(
+            self.get_action_space_dimension()
+        )
+        self.observation_space = gym.spaces.Box(
+             low=0, high=10, shape=self.get_state_space_shape(), dtype=np.int32
+        )
+
     def step(self, action):
         
         unadapted_action_taken = True  # A flag to tell if the action has an effect
+
+        if action == self.n_jobs:
+            action = -1
 
         if action == -1: # This action correspond to noop
             if self.check_machine_occupation():
@@ -57,7 +70,7 @@ class FactoryEnv:
                         unadapted_action_taken = False
         else: 
             raise Exception(f"The action you provided ({action}) is not valid. "
-            f"Please provide an integer between -1 and {self.n_jobs}.")
+            f"Please provide an integer between -1 and {self.n_jobs - 1}.")
 
         # We only move forward if there is no uselessly free machine
         if self.check_machine_occupation():  
@@ -150,16 +163,21 @@ class FactoryEnv:
         self.completion = np.zeros((self.n_jobs, self.n_machines))
         self.current_jobs = np.zeros((self.n_jobs, self.n_machines))
         self.machine_usage = np.zeros(self.n_machines)
+        return self.get_state()
 
     def get_action_space_dimension(self):
         return self.n_jobs + 1
 
-    def get_state_space_dimension(self):
+    def get_state_space_shape(self):
         if self.encoding == 'classic':
-            return self.n_jobs * self.n_machines * 3
+            return (self.n_machines * 3, self.n_jobs)
         elif self.encoding == 'one-hot':
-            return (self.n_jobs + self.n_machines * 2 + 2) * self.n_machines * self.n_jobs
+            return ((self.n_jobs + self.n_machines * 2 + 2), self.n_machines * self.n_jobs)
     
+    def get_state_space_dimension(self):
+        shape = self.get_state_space_shape()
+        return shape[0] * shape[1]
+
     def check_machine_occupation(self):
         # The point of this function is to check if there is a machine
         # which could be used, but which isn't because of the ordrers given
