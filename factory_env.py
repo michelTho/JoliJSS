@@ -77,9 +77,9 @@ class FactoryEnv(gym.Env):
             self.move_forward()
         
         # We use the same API as gym environments : https://gym.openai.com/docs/
-        reward = 1000 if self.check_done() else -1
+        reward = 10 if self.check_done() else -1
         if unadapted_action_taken:
-            reward -= -10
+            reward -= 0
         return self.get_state(), reward, self.check_done(), {"n_steps" : self.n_steps}
          
     def render(self, verbosity=0):

@@ -15,8 +15,8 @@ from benchmark import AFFECTATIONS, TIMES
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-n_jobs = 2
-n_machines = 2
+n_jobs = 5
+n_machines = 5
 
 affectations = np.floor(np.random.uniform(0, n_machines, (n_jobs, n_machines))).astype(np.int32) 
 times = np.floor(np.random.uniform(1, 10, (n_jobs, n_machines))).astype(np.int32) 
@@ -41,7 +41,7 @@ check_env(env)
 #                     device)
 
 agent = PPO(MlpPolicy, env, verbose=1)
-agent.learn(total_timesteps=10000)
+agent.learn(total_timesteps=1000000, eval_freq=1000)
 
 n_episodes = 50000 
 sum_steps = 0
