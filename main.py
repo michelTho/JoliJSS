@@ -18,7 +18,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 n_jobs = 5
 n_machines = 5
 
-affectations = np.floor(np.random.uniform(0, n_machines, (n_jobs, n_machines))).astype(np.int32) 
+affectations = np.floor(np.random.uniform(0, n_machines, 
+    (n_jobs, n_machines))).astype(np.int32) 
 times = np.floor(np.random.uniform(1, 10, (n_jobs, n_machines))).astype(np.int32) 
 
 print(affectations)

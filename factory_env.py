@@ -75,7 +75,7 @@ class FactoryEnv(gym.Env):
         
         reward = 10 if self.check_done() else -1
         if unadapted_action_taken:
-            reward -= 0
+            reward -= 1
         
         return self.get_state(), reward, self.check_done(), {"n_steps" : self.n_steps}
          

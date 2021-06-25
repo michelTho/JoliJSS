@@ -12,7 +12,7 @@ class SimpleAgent:
 
     def __init__(self, n_jobs, n_machines, input_size, n_actions, hidden_size, device):
         self.batch_size = 512
-        self.gamma = 0.9
+        self.gamma = 1 
         self.eps_start = 0.9
         self.eps_end = 0.
         self.eps_decay = 5000
@@ -26,7 +26,7 @@ class SimpleAgent:
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
         
-        self.memory = ReplayMemory(10000)
+        self.memory = ReplayMemory(100000)
 
         self.steps_done = 0
 
@@ -35,7 +35,7 @@ class SimpleAgent:
    
     @classmethod
     def convert_state_to_net_input(cls, state):
-        return torch.tensor(state).view(-1).float() # Reshape tensor to make it a column
+        return torch.tensor(state).view(-1).float() # Reshape tensor to make a column
 
     def get_epsilon(self):
         eps_threshold = self.eps_end + (self.eps_start - self.eps_end) * \
@@ -43,10 +43,7 @@ class SimpleAgent:
         return eps_threshold
 
     def select_action(self, state):
-        action_id = self.select_action_id(state)
-        if action_id == self.n_actions - 1:
-            return - 1
-        return action_id
+        return self.select_action_id(state)
 
     def select_action_id(self, state):
         sample = random.random()
@@ -58,8 +55,6 @@ class SimpleAgent:
             return random.randrange(self.n_actions)
 
     def store(self, state, action, reward, next_state):
-        if action == -1:
-            action = self.n_actions - 1
         self.memory.push(torch.tensor(state, device=self.device).view(-1, 1).float(), 
                          torch.tensor(action, device=self.device).view(-1, 1), 
                          torch.tensor([reward], device=self.device), 
