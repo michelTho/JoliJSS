@@ -9,7 +9,9 @@ def test_check_machine_occupation():
     env = FactoryEnv(
         3, 3, 
         np.array([[0, 1, 2], [1, 1, 1], [2, 1, 0]]), 
-        np.array([[10,10,10],[10,10,10],[10,10,10]])
+        np.array([[10,10,10],[10,10,10],[10,10,10]]),
+        encoding='classic',
+        time_handling='steps'
     )
     
     assert env.check_machine_occupation() == False
@@ -20,8 +22,8 @@ def test_check_machine_occupation():
     
     assert env.check_machine_occupation() == True
 
-    for i in range(8):
-        env.step(-1) 
+    for i in range(10):
+        env.step(3) 
     
     assert env.check_machine_occupation() == False
 
