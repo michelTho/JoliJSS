@@ -238,7 +238,6 @@ class FactoryEnv(gym.Env):
                     elif next_state not in viewed_states:
                         states.add(next_state)
             viewed_states.add(state)
-        print(f"There are {len(viewed_states)} states")
         return viewed_states
 
     def get_hashable_state(self, state):
