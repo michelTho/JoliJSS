@@ -15,7 +15,7 @@ class SimpleAgent:
         self.gamma = 1 
         self.eps_start = 0.9
         self.eps_end = 0.
-        self.eps_decay = 5000
+        self.eps_decay = 50000
         self.target_update = 1000
 
         self.n_actions = n_actions
