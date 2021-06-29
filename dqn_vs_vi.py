@@ -3,7 +3,6 @@ from copy import copy
 from datetime import datetime
 import time                                                                             
             
-import gnuplotlib as gp
 import matplotlib.pyplot as plt
 import numpy as np                                                                      
 import torch   
