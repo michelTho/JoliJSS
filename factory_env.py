@@ -48,7 +48,7 @@ class FactoryEnv(gym.Env):
         self.action_space = gym.spaces.Discrete(
             self.get_action_space_dimension())
         self.observation_space = gym.spaces.Box(
-             low=0, high=10, shape=self.get_state_space_shape(), dtype=np.int32)
+             low=0, high=20, shape=self.get_state_space_shape(), dtype=np.int32)
 
     def step(self, action):
         unadapted_action_taken = True  # A flag to tell if the action has an effect
@@ -173,6 +173,7 @@ class FactoryEnv(gym.Env):
     
     def flatten_state(self, state):
         return state.reshape(-1)    
+
 #======================================================================================
 #=============================== GETTERS FUNCTIONS ====================================
 #======================================================================================
