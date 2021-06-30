@@ -77,7 +77,8 @@ class FactoryEnv(gym.Env):
         if unadapted_action_taken:
             reward -= 1
         
-        return self.get_state(), reward, self.check_done(), {"n_steps" : self.n_steps}
+        return self.flatten_state(self.get_state()), reward, self.check_done(), \
+            {"n_steps" : self.n_steps}
          
     def render(self, verbosity=0):
         print("PROBLEM DESCRIPTION")
@@ -100,7 +101,10 @@ class FactoryEnv(gym.Env):
         self.completion = np.zeros((self.n_jobs, self.n_machines))
         self.current_jobs = np.zeros((self.n_jobs, self.n_machines))
         self.machine_usage = np.zeros(self.n_machines)
-        return self.get_state()
+        return self.flatten_state(self.get_state())
+
+    def close(self):
+        self.reset()
 
 #======================================================================================
 #================================= HELPER FUNCTIONS ===================================
@@ -166,7 +170,9 @@ class FactoryEnv(gym.Env):
             for j in range(self.n_machines):
                 if self.current_jobs[i, j] == 1:
                     self.machine_usage[self.affectations[i, j]] = 1
-
+    
+    def flatten_state(self, state):
+        return state.reshape(-1)    
 #======================================================================================
 #=============================== GETTERS FUNCTIONS ====================================
 #======================================================================================
@@ -200,12 +206,8 @@ class FactoryEnv(gym.Env):
             return np.array(state)
 
     def get_state_space_shape(self):
-        if self.encoding == 'classic':
-            return (self.n_machines * 4, self.n_jobs)
-        elif self.encoding == 'one-hot':
-            return ((self.n_jobs + self.n_machines * 2 + 2),
-                        self.n_machines * self.n_jobs)
-   
+        return self.flatten_state(self.get_state()).shape
+
     def get_action_space_dimension(self):
         return self.n_jobs + 1
     
